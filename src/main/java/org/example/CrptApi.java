@@ -6,24 +6,38 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.slf4j.*;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+/**
+ *  Crpt api Класс для работы с API Честного знака с ограничением частоты запросов.
+ */
 public class CrptApi {
     private static final Logger logger = LoggerFactory.getLogger(CrptApi.class);
     private final RateLimiter rateLimiter;
     private final Gson gson = new Gson();
     private static final String API_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
 
+    /**
+     * Instantiates a new Crpt api.
+     *
+     * @param requestLimit -ограничение запросов
+     * @param timeUnit     -промежуток времени – секунда, минута и пр.
+     */
     public CrptApi(int requestLimit, TimeUnit timeUnit) {
 
-        double permitsPerSecond = timeUnit.toSeconds(1) / requestLimit;
+        double requestPerSecond = timeUnit.toSeconds(1) / requestLimit;
 
-        this.rateLimiter = RateLimiter.create(permitsPerSecond);
+        this.rateLimiter = RateLimiter.create(requestPerSecond);
     }
 
+    /**
+     * Create document.
+     *
+     * @param document  -создаваемый документ
+     * @param signature -подпись документа
+     */
     public synchronized void createDocument(Document document, String signature) {
         rateLimiter.acquire();
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
@@ -48,6 +62,10 @@ public class CrptApi {
 
     }
 }
+
+/**
+ * The type Document.
+ */
 class Document {
     private Description description;
     private String doc_id;
@@ -63,6 +81,11 @@ class Document {
     private String reg_date;
     private String reg_number;
 
+    /**
+     * Gets description.
+     *
+     * @return the description
+     */
     public Description getDescription() {
         return description;
     }
@@ -167,6 +190,9 @@ class Document {
         this.reg_number = reg_number;
     }
 
+    /**
+     * The type Description.
+     */
     public  class Description {
         private String participantInn;
 
@@ -179,6 +205,9 @@ class Document {
         }
     }
 
+    /**
+     * The type Product.
+     */
     public  class Product {
         private String certificate_document;
         private String certificate_document_date;
